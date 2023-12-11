@@ -42,7 +42,7 @@ simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
     dt = 1e-2; % 10 ms, unit: s
     locError = 0e-2; % unit: um
 
-global r l
+global r
 r = 1; % radius of the sphere
 
 fprintf( '~~~~ Simulation Starts ~~~~\n')
@@ -94,7 +94,7 @@ for i = 1: nTracks
         k = k1* cos( randAngle(j)) + k2* sin( randAngle(j));
 
         % jump size should have variance = 2Dt in each dimension
-        rotTheta = jumps(j, 1)/ r; % angle of rotation, what should it be 6Dt or 4Dt?
+        rotTheta = jumps(j, 1)/ r; % angle of rotation
 
         % v′=vcosθ+(r×v)sinθ+r(v*r)(1−cosθ), dot(v,k)=0
         pos = v*cos( rotTheta) + cross(k, v)* sin( rotTheta); % new position after rotation
@@ -112,7 +112,9 @@ for i = 1: nTracks
     singleSteps = sqrt( sum(( traj( 2:end, :)- traj( 1:end-1, :)).^2, 2)); % unit: um    
     tracksFinal(i).steps = singleSteps'; % unit: um        
     
-    plot3( traj(:,1), traj(:,2), traj(:,3)), hold on % , 'LineWidth', 1.5
+    if logical( plotTrackFlag)
+        plot3( traj(:,1), traj(:,2), traj(:,3)), hold on % , 'LineWidth', 1.5
+    end
 end
 
 % Plot Setting
@@ -125,16 +127,15 @@ if logical( plotTrackFlag)
     xlabel( 'X (\mum)', 'FontSize', 14)
     ylabel( 'Y (\mum)', 'FontSize', 14)
     zlabel( 'Z (\mum)', 'FontSize', 14)
-%     title( 'Maggie''s Membrane Simulation', 'FontSize', 16)
     title( 'Simulated Tracks on Sphere', 'FontSize', 16)
-    axis image
     view(-60, 20) % view(az,el)  az=-37, el = 30
+    axis image
 end
 
 
 %% Maggie's Code of Simulating Membrane Diffusion
-% she used a different way to rotate the vector, a little bit confusing,
-% but it works well!
+% she used a different way to rotate the vector, she took a random step
+% from the north, and then move this vector to the proximity to the v
 
 figure
 for i = 1: nTracks
@@ -143,7 +144,7 @@ for i = 1: nTracks
     pos = ori( i,:);  traj( 1,:) = pos;
      
     jumps = raylrnd( sqrt( 2*D*dt), nFrames-1, 1); % step magnitude, unit: um 
-%     jumps = 0.1* ones( nFrames-1, 1); % fixed step size
+    jumps = 0.1* ones( nFrames-1, 1); % fixed step size
     
     for j = 1: nFrames-1
         
@@ -154,12 +155,12 @@ for i = 1: nTracks
         phi0 = atan2(pos(2),pos(1));
         
         rand_angle = 2*pi*rand;
-        theta0 = atan2( sqrt(R.^2-z0.^2), z0);
+        theta0 = atan2( sqrt(R.^2-z0.^2), z0); % angle with z-axis
         
         %see Rodrigues' rotation formula. the point of below is just to
         %locate a point with set distance to initial point
         phi_perp = phi0+pi./2;
-        rand_pos_sph = [R,rand_angle,step_size/R];
+        rand_pos_sph = [R,rand_angle,step_size/R]; % a random step from north pole
         
         phi = rand_pos_sph(2);
         theta = rand_pos_sph(3);
@@ -167,7 +168,7 @@ for i = 1: nTracks
         y = R.*sin(phi).*sin(theta);
         z = R.*cos(theta);
         
-        v = [x,y,z];
+        v = [x,y,z]; plot3( x,y,z), hold on
         k = [cos(phi_perp),sin(phi_perp),0];
         pos = v.*cos(theta0) +cross(k,v).*sin(theta0) + k.*(sum(k.*v)).*(1-cos(theta0));
         

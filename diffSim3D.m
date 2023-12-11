@@ -29,7 +29,7 @@ nTracks = 1000;
 nFrames = 20;
 maxTau = nFrames - 1;
 Date = '230727';
-simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\Simulation\'; cd( simPath)
+simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 
 D = 0.5; % um^2/s
 timeStep = 20e-3; % 10 ms, unit: s

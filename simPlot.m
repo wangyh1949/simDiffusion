@@ -24,7 +24,7 @@ clear
 clc
 close all
 
-simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\Simulation\'; cd( simPath)
+simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 
 list = dir( 'Sim*.mat');
 plotNum = getPlotNum( list); % find which files you want to plot 
