@@ -41,14 +41,14 @@ clear, clc, close all
 simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 strain = 'sim';
 
-plotTrackFlag = 1;
+plotTrackFlag = 0;
 
-nTracks = 100;     nFrames = 30;   maxTau = nFrames - 1; % for TA-MSD
+nTracks = 1000;     nFrames = 30;   maxTau = nFrames - 1; % for TA-MSD
 
-D = 0.2;    % um^2/s 
+D = 0.1;    % um^2/s 
 dt = 1e-2;  % 10 ms, unit: s
 
-locError = 0e-2; % 40 nm, unit: um
+locError = 0e-3; % 40 nm, unit: um
 
 cellWid = 0.6;    cellLength = 2; % cell long axis: y & short axis: x-z
 global r l
@@ -61,7 +61,7 @@ fprintf( '   nFrame = %d, total step = %.2f um\n', nFrames, sqrt( 4*D*dt*nFrames
 
 %% 1. generate randomly distributed origin points on the membrane
     
-rng(0) % to make the result repeatable
+% rng(0) % to make the result repeatable
 
     % equivalent to: unifrnd( -cellLength/2, cellLength/2, nTracks, 1);
     y = ( rand( nTracks, 1)- 0.5)* cellLength; % random y from -L/2 ~ L
@@ -81,7 +81,6 @@ rng(0) % to make the result repeatable
 close all
 
 % nTracks = 100;     nFrames = 100;
-
 tracksFinal( nTracks, 1).traj = [];
 
 tic
@@ -92,15 +91,13 @@ for i = 1: nTracks
     
     randAngle = 2*pi* rand( nFrames-1, 1); % random angle from 0~2pi
     jumps = raylrnd( sqrt( 2*D*dt), nFrames-1, 1); % step magnitude, unit: um 
-%     jumps = ones( nFrames-1, 2)*0.1;
+%     jumps = ones( nFrames-1, 2)*0.025;
     
-    for j = 1: nFrames-1
-        
+    for j = 1: nFrames-1        
         y = pos(2);
         
         % in the Cap region
-        if abs( y) >= l 
-            
+        if abs( y) >= l             
             v = pos - [0, l* sign(y), 0]; % relative vector on a sphere            
             
             % find the basis k1 & k2 of the orthogonal plane of v
@@ -125,10 +122,8 @@ for i = 1: nTracks
             
             phi = atan2( pos(3), pos(1)); % phi angle at the base of hemisphere            
             phiRot = jumps(j)* cos( randAngle(j))/ r;            
-            pos = cellShape( [ r*cos( phi+ phiRot), pos(2)+jumps(j)*sin( randAngle(j)), r*sin( phi+ phiRot)], 'onCyl');
-                        
-        end
-        
+            pos = cellShape( [ r*cos( phi+ phiRot), pos(2)+jumps(j)*sin( randAngle(j)), r*sin( phi+ phiRot)], 'onCyl');                        
+        end        
         traj( j+1,:) = pos;
     end
 
@@ -137,13 +132,15 @@ for i = 1: nTracks
     
     % save track X & Y coordinates into tracksFinal structure
     tracksFinal(i).traj = traj; % x & y coordiate, unit: um
-%     traj = traj( :, 1:2);   
     
     % ~~~~ Calculate Single Steps ~~~~
-    singleSteps = sqrt( sum(( traj( 2:end, :)- traj( 1:end-1, :)).^2, 2)); % unit: um    
-    tracksFinal(i).steps = singleSteps'; % unit: um        
+    singleSteps3D = sqrt( sum(( traj( 2:end, :)- traj( 1:end-1, :)).^2, 2)); % unit: um
+    singleSteps = sqrt( sum(( traj( 2:end, 1:2)- traj( 1:end-1, 1:2)).^2, 2)); % unit: um
     
-    if logical( plotTrackFlag)
+    tracksFinal(i).steps3D = singleSteps3D'; % unit: um
+    tracksFinal(i).steps = singleSteps'; % unit: um
+    
+    if logical( plotTrackFlag) % && ~inCap(i)
         plot3( traj(:,1), traj(:,2), traj(:,3), 'LineWidth', 1), hold on
     end
 end
@@ -151,10 +148,12 @@ end
 fprintf( '\n~~~~~~  Simulation Done  ~~~~~~\n')
 toc
 
+% tracksFinal = tracksFinal( ~inCap);
+
 steps  = [ tracksFinal.steps]'; % unit: um
+steps3D = [ tracksFinal.steps3D]'; % unit: um
 
 % Plot Setting
-
 if logical( plotTrackFlag)
     figure( gcf)
     hold off
@@ -168,15 +167,14 @@ if logical( plotTrackFlag)
     axis image
 end
 
-    
 
 %% Diffusion Analysis
 
-% diffSimAnalysis
+diffSimAnalysis
 % 
 % msd = EnsTAMSD(:,1); % MSD(1)
 % 
-% simJDPlot
+simJDPlot
 
 %     simName = sprintf( 'Sim %s_%d frames_D %.2f_LocE %d.mat', Date, nFrames, D, locError*1e3);
 %     save( [simPath 'Data\' simName])
