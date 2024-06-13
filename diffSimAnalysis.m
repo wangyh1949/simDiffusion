@@ -18,6 +18,8 @@ MSD fitting parameter:
 
 tic
 
+
+
 %% MSD Analysis in 3D
 
 nTracks = length( tracksFinal);
@@ -92,32 +94,32 @@ toc
 %% fitting the MSD & plot
 
 % close all
-
-eaMSD3D = mean( EnsMSD3D); % EA-MSD, unit: um^2
-% eataMSD3D = mean( EnsTAMSD3D); % EATA-MSD, unit: um^2
-
-    % fit the MSD of individual tracks MSD = 4Dt + 4*locErr^2
-    fitRange = 1: 3; % points of MSD used for fitting
-    p = polyfit( dt* fitRange, eaMSD3D( fitRange), 1); % linear fit, y = ax + b
-
-    dif3D = p(1)/ 6; % may be negative, 3D case
-    locErr3D = sqrt( p(2)/ 6); % unit: um, may be imaginary (should exclude later)
-
-    time = (1: maxTau) * dt;
-    t = (1:20)* dt; MSDFit = p(1)*t + p(2);
-
-    figure
-    plot( time, eaMSD3D, 'o', 'LineWidth', 1, 'DisplayName', sprintf( 'EA-MSD, D=%.2f', D)), hold on
-    % plot( time, eataMSD3D, 'o', 'LineWidth', 1, 'DisplayName', 'EATA-MSD')
-    plot( t, MSDFit, 'r', 'LineWidth', 2, 'DisplayName',...
-        sprintf( 'D*=%.3f, \\sigma=%.0fnm', dif3D, locErr3D*1e3)) % , [strain extraName]
-
-    set( figure(gcf), 'Position', [800 500 350 320])
-    set( gca, 'FontSize', 12)
-    xlabel( 'Time (s)', 'FontSize', 14)
-    ylabel( 'MSD (µm^2)', 'FontSize', 14)
-    title( 'Simulation Data 3D', 'FontSize', 14) %
-    legend( 'Location', 'northwest', 'FontSize', 11)
+% 
+% eaMSD3D = mean( EnsMSD3D); % EA-MSD, unit: um^2
+% % eataMSD3D = mean( EnsTAMSD3D); % EATA-MSD, unit: um^2
+% 
+%     % fit the MSD of individual tracks MSD = 4Dt + 4*locErr^2
+%     fitRange = 1: 3; % points of MSD used for fitting
+%     p = polyfit( dt* fitRange, eaMSD3D( fitRange), 1); % linear fit, y = ax + b
+% 
+%     dif3D = p(1)/ 6; % may be negative, 3D case
+%     locErr3D = sqrt( p(2)/ 6); % unit: um, may be imaginary (should exclude later)
+% 
+%     time = (1: maxTau) * dt;
+%     t = (1:20)* dt; MSDFit = p(1)*t + p(2);
+% 
+%     figure
+%     plot( time, eaMSD3D, 'o', 'LineWidth', 1, 'DisplayName', sprintf( 'EA-MSD, D=%.2f', D)), hold on
+%     % plot( time, eataMSD3D, 'o', 'LineWidth', 1, 'DisplayName', 'EATA-MSD')
+%     plot( t, MSDFit, 'r', 'LineWidth', 2, 'DisplayName',...
+%         sprintf( 'D*=%.3f, \\sigma=%.0fnm', dif3D, locErr3D*1e3)) % , [strain extraName]
+% 
+%     set( figure(gcf), 'Position', [800 400 350 320])
+%     set( gca, 'FontSize', 12)
+%     xlabel( 'Time (s)', 'FontSize', 14)
+%     ylabel( 'MSD (µm^2)', 'FontSize', 14)
+%     title( 'Simulation Data 3D', 'FontSize', 14) %
+%     legend( 'Location', 'northwest', 'FontSize', 11)
 
 %% 2D projected MSD
 
@@ -131,19 +133,28 @@ eaMSD = mean( EnsMSD); % EA-MSD, unit: um^2
     dif = p(1)/ 4; % may be negative, 3D case
     locErr = sqrt( p(2)/ 4); % unit: um, may be imaginary (should exclude later)
 
-    time = (1: maxTau) * dt;
+    time = (1: maxTau) * frameT;
     t = (1:20)* dt; MSDFit = p(1)*t + p(2);
 
-    figure
-    plot( time, eaMSD, 'o', 'LineWidth', 1, 'DisplayName', sprintf( 'EA-MSD, D=%.2f', D)), hold on
+%     figure
+    
+    scatter( time, eaMSD, 30, 'LineWidth', 2, 'MarkerEdgeAlpha', 0.5,... % 'MarkerEdgeColor', colorList(c,:),...
+        'DisplayName', sprintf( 'EA-MSD, D=%.2f', D)), hold on
+    
+    fitRange = 1:3; fitTxt = '1:3 fit'; 
+    f = polyfit( log( time( fitRange)), log( eaMSD( fitRange)), 1);
+    alphaFit = f(1);    Dapp = exp( f(2))/4;
+    t = time( 1: round( end/6));    MSDFit =  4* Dapp* t.^ alphaFit;
+    
     % plot( time, eataMSD, 'o', 'LineWidth', 1, 'DisplayName', 'EATA-MSD')
-    plot( t, MSDFit, 'r', 'LineWidth', 2, 'DisplayName',...
-        sprintf( 'D*=%.3f, \\sigma=%.0fnm', dif, locErr*1e3)) % , [strain extraName]
+%     plot( t, MSDFit, 'r', 'LineWidth', 2, 'DisplayName',...
+%         sprintf( 'D*=%.3f, \\sigma=%.0fnm', dif, locErr*1e3)) % , [strain extraName]
 
-    set( figure(gcf), 'Position', [1160 500 350 320])
+    set( figure(gcf), 'Position', [1160 400 350 320])
     set( gca, 'FontSize', 12)
     xlabel( 'Time (s)', 'FontSize', 14)
     ylabel( 'MSD (µm^2)', 'FontSize', 14)
     title( 'Simulation Data 2D', 'FontSize', 14) %
     legend( 'Location', 'northwest', 'FontSize', 11)
 
+    set( gca, 'Xscale', 'log', 'YScale', 'log')

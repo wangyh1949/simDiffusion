@@ -10,7 +10,7 @@ it plot the 1-CDF of jump distance and do fitting to extract D coefficient
 -------------------------------------------------------------
 %}
 
-timeStep = dt; meanD = D; extraName = '';
+timeStep = frameT; meanD = D; extraName = '';
 
 count = 1;
 
