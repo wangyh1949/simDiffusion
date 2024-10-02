@@ -74,7 +74,7 @@ fprintf( '~~~~  Time: %.2f s (%d tracks, %d steps)  ~~~~\n\n', toc( tStart), nTr
 
 %% plot MSD & Fit
 
-figure( 'Position', [1000 400 400 400])
+figure( 'Position', [1000 400 420 400])
 
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system

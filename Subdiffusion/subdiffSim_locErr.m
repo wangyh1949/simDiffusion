@@ -63,14 +63,14 @@ fprintf( '~~~~  Time: %.2f s (Covariance Matrix Created)  ~~~~\n\n', toc( tStart
 
 close all
 
-figure( 'Position', [1000 400 400 400])
+figure( 'Position', [1000 400 420 400])
 colorList = get( gca,'colororder');
 cList = repmat( colorList, [2, 1]);
 
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-linearFitFlag = 1; % 1: linear fit, 2: non-linear fit
+linearFitFlag = 0; % 1: linear fit, 2: non-linear fit
 
 locErrList = [ 0 20 30 40 ]* 1e-3;
 % locErrList = 20e-3;
@@ -99,7 +99,8 @@ for c = 1: length( locErrList)
     time = dt*( 1: nSteps-1);
 
     note = sprintf( '\\sigma=%d', locErr*1e3);
-
+    
+    % plot MSD
     scatter( time, eaMSD, 40, 'LineWidth', 2, 'MarkerEdgeColor', colorList( c,:),...
         'MarkerEdgeAlpha', 0.5, 'HandleVisibility','off'), hold on
 
@@ -122,9 +123,10 @@ for c = 1: length( locErrList)
 
         f = fit( time(fitR2)', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
         DFit = f.a;  alphaFit = f.b;  locErrFit = sqrt( f.c); % unit: um
-
-        t =  [ time( 1: round( end/2))];    MSDFit = 2*dim*( DFit* t.^ alphaFit + f.c);
-        plot( t, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
+        
+        tFit = linspace( time(1), time( round( nFrames/2)), 1000);    
+        MSDFit = 2*dim*( DFit* tFit.^ alphaFit + f.c);
+        plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
             sprintf( '\\alpha=%.2f, D=%.1e, \\sigma=%.0f', alphaFit, DFit, locErrFit*1e3))
     end
 
@@ -146,6 +148,6 @@ set( gca, 'Xscale', 'log', 'YScale', 'log')
 
 simTxt = sprintf( '%d tracks\n  dt = %dms', nTracks, dt*1e3);
 % text( 0.5, 0.2, simTxt, 'FontSize', 13, 'Units', 'normalized')
-text( 0.1, 0.85, simTxt, 'FontSize', 13, 'Units', 'normalized')
+txt = text( 0.1, 0.85, simTxt, 'FontSize', 13, 'Units', 'normalized');
 
 
