@@ -2,7 +2,7 @@
 -------------------------------------------------------------
 Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     creation date: 12/5/2023
-    last updated date: 4/15/2023
+    last updated date: 4/15/2024
 
 Description: this script 'diffSimCell' is adapted from 'diffSim3D'
 1) simulates the diffusion of a free particle in a confined cell shape in
