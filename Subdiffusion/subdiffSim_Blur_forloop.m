@@ -77,10 +77,11 @@ dim = 3; % dimension of the system
 linearFitFlag = 1; % 1: linear fit, 2: non-linear fit
 
 locErrList = [ 0 20 40 70 0]* 1e-3;
-% locErrList = 20e-3;
+% locErrList = [ 30 40 50 60 70]* 1e-3;
+% nTracks = 50000;
 
-avgFlag = true( 1, length( locErrList));
-avgFlag( end) = false;
+blurFlag = true( 1, length( locErrList));
+blurFlag( end) = false;
 
 fitResult = nan( length( locErrList), 2);
 
@@ -97,12 +98,12 @@ for c = 1: length( locErrList)
         
         trajLoc = traj + locE;
         
-        if logical( avgFlag( c))
+        if logical( blurFlag( c))
             % motion blur: average position of every nAvg frames 
             tmp = reshape( trajLoc', 3, nInterval, []); % divide by each frame
             trajAvg = squeeze( mean( tmp( :, 1:nAvg, :), 2))'; % average over the exposure
         else
-            trajAvg = trajLoc( 1: nInterval: end, :);
+            trajAvg = traj( 1: nInterval: end, :);
         end
             
         dr = trajAvg( 2:end, :) - trajAvg( 1, :);
@@ -114,10 +115,10 @@ for c = 1: length( locErrList)
     eaMSD = mean( EnsMSD, 1);
     time = (1: nFrames-1)* dt*nInterval; % readout time points
 
-    if logical( avgFlag( c))
+    if logical( blurFlag( c))
         note = sprintf( '\\sigma=%dnm', locErr*1e3);
     else
-        note = 'no avg';
+        note = 'no blur';
     end
     
     % plot MSD

@@ -86,13 +86,13 @@ colorList = get( gca,'colororder');     colorList = repmat( colorList, [2, 1]);
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-linearFitFlag = 0; % 1: linear fit, 2: non-linear fit
+linearFitFlag = 1; % 1: linear fit, 2: non-linear fit
 
 locErrList = [ 0 20 40 70 0]* 1e-3;
 % locErrList = 20e-3;
 
-avgFlag = true( 1, length( locErrList));
-avgFlag( end) = false;
+blurFlag = true( 1, length( locErrList));
+blurFlag( end) = false;
 
 fitResult = nan( length( locErrList), 2);
 
@@ -107,11 +107,11 @@ for c = 1: length( locErrList)
     locE = { tf.locE}';
     trajLoc = cellfun( @plus, traj, locE, 'UniformOutput', false);
         
-    if logical( avgFlag( c))
+    if logical( blurFlag( c))
         tmp = cellfun( @(x) reshape( x', 3, nInterval, []), trajLoc, 'UniformOutput', false);
         trajAvg = cellfun( @(x) squeeze( mean( x(:,1:nAvg,:),2))', tmp, 'UniformOutput', false);
     else
-        trajAvg = cellfun( @(x) x( 1: nInterval: end, :), trajLoc, 'UniformOutput', false);
+        trajAvg = cellfun( @(x) x( 1: nInterval: end, :), traj, 'UniformOutput', false);
     end
             
     EnsMSD = cell2mat( cellfun( @(x) sum( (x(2:end,:)- x(1,:)).^2, 2), trajAvg, 'UniformOutput', false)')';
@@ -119,10 +119,10 @@ for c = 1: length( locErrList)
     eaMSD = mean( EnsMSD, 1);
     time = dt* nInterval*( 1:nFrames-1); % readout time points
 
-    if logical( avgFlag( c))
+    if logical( blurFlag( c))
         note = sprintf( '\\sigma=%dnm', locErr*1e3);
     else
-        note = 'no avg';
+        note = 'no blur';
     end
     
     % plot MSD
