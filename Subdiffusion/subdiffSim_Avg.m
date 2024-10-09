@@ -1,7 +1,7 @@
 %{
 Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     Creation date: 9/24/2024
-    Last update date: 10/1/2024
+    Last update date: 10/9/2024
 
 Description: This code simulation the diffusion following fractional
 Brownian Motion (fBM), this allows subdiffusion simulation
@@ -24,10 +24,10 @@ simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 strain = 'sim';
 
 % imaging parameters
-nTracks = 10000; 
+nTracks = 20000; 
 nFrames = 100;      % frane number: 100 frames
 frameT = 100e-3;    % frame interval: 500 ms
-% expT = 100e-3;      % exposure time: 100 ms
+expT = 100e-3;      % exposure time: 100 ms
 dt = 5e-3;         % simulation step time: 20 ms
 
 % secondary parameters
@@ -38,13 +38,12 @@ time = dt* nInterval*( 1:nFrames-1); % readout time points
 % diffusion parameters
 alpha = 0.4;        % subdiffusion exponent
 D = 0.005;          % um^2/s
-locErr = 20e-3;     % unit: um
+locErr = 0e-3;     % unit: um
 
 
 fprintf( '~~~~ Simulation Starts ~~~~\n')
 fprintf( '   D = %.1g,  dt = %d ms,  frameT = %d ms,  nFrame = %d,  locErr = %.1g nm\n\n', D, dt*1e3, frameT*1e3, nFrames, locErr*1e3)
 
-% fprintf( '   locErr^2 = %d nm^2, motion blur = %.2f nm^2\n\n', locErr^2* 1e6, 2*D*expT^alpha/ (1+alpha)/ (2+alpha)* 1e6)
 
 %% Subdiffusion simulation (fBM)
 
@@ -70,7 +69,7 @@ tf( nTracks, 1).traj = []; % initialization
 
 for i = 1: nTracks
     tf(i).traj = L* randn( nSteps, 3); % subdiffusive tracks
-    % tf(i).locE = sqrt( 2*locErr^2)* randn( nSteps, 3); % unit: um
+    % tf(i).locE = locErr* randn( nFrames, 3); % unit: um
 end
 traj = { tf.traj}';
 % locE = { tf.locE}';
@@ -88,9 +87,10 @@ cList = repmat( colorList, [2, 1]);
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-linearFitFlag = 1; % 1: linear fit, 2: non-linear fit
+theoFlag = true; % flag for plotting the theoretical MSD
+linearFitFlag = false; % 1: linear fit, 0: non-linear fit
 
-expTList = [20 20 50 100]* 1e-3;      % exposure time: 100 ms
+expTList = [0 20 50 100]* 1e-3;      % exposure time: 100 ms
 % expTList = [100]* 1e-3;      % exposure time: 100 ms
 
 avgFlag = true( 1, length( expTList));
@@ -103,14 +103,25 @@ for c = 1: length( expTList)
     expT = expTList( c);
     nAvg = expT/ dt;        % number of averaging steps per exposure
     
-    % trajLoc = cellfun( @plus, traj, locE, 'UniformOutput', false);
+    fprintf( '    expT = %d ms, locErr^2 = %d nm^2, motion blur = %.2f nm^2\n',...
+        expT*1e3, locErr^2* 1e6, 2*D*expT^alpha/ (1+alpha)/ (2+alpha)* 1e6)
 
     if logical( avgFlag( c))
+
+        % divide simulation steps by each frame (nInterval steps) into the 3rd dimension
+        % dimension: [x, y, z] - [3, nInterval, nFrames]
         tmp = cellfun( @(x) reshape( x', 3, nInterval, []), traj, 'UniformOutput', false);
+
+        % take average of steps during the exposure time window 
+        % (average of 1:nAvg in the nInterval steps), dimension: [x, y] - [nFrames, 3]
         trajAvg = cellfun( @(x) squeeze( mean( x(:,1:nAvg,:),2))', tmp, 'UniformOutput', false);
+
     else
+        % no blur (no averaging & locErr), dimension: [x, y] - [nFrames, 3]
         trajAvg = cellfun( @(x) x( 1: nInterval: end, :), traj, 'UniformOutput', false);
     end
+
+    % trajLoc = cellfun( @plus, trajAvg, locE, 'UniformOutput', false);
     
     EnsMSD = cell2mat( cellfun( @(x) sum( (x(2:end,:)- x(1,:)).^2, 2), trajAvg, 'UniformOutput', false)')';
     
@@ -132,7 +143,13 @@ for c = 1: length( expTList)
     f = polyfit( log( time( fitR)), log( eaMSD( fitR)), 1);
     alphaFit = f(1);    DFit = exp( f(2))/ (2*dim);
     
-    if logical( linearFitFlag)
+    if logical( theoFlag)
+        % plot theoretical MSD
+        tFit = linspace( time(1), time( round( nFrames/4)), 1000);
+        MSDtheo = 2*dim* D* tFit.^ alpha - 4*dim* D* expT^alpha/ (( 1+alpha)*( 2+alpha));
+        plot( tFit, MSDtheo, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', sprintf( 'theory [%s]', note))
+
+    elseif logical( linearFitFlag)
         % plot linear fit
         tFit = time( 1: round( end/10));  MSDFit =  2* dim* DFit* tFit.^ alphaFit;
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), ...
@@ -153,8 +170,6 @@ for c = 1: length( expTList)
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
             sprintf( '\\alpha=%.2f, D=%.1e, \\sigma=%.0fnm', alphaFit, DFit, locErrFit*1e3))
     end
-
-    % MSDtheo = 2* dim* Dapp* tFit.^ alphaFit;
 
     fitResult( c, :) = [alphaFit, DFit];
 end

@@ -50,7 +50,7 @@ for locError = (0:20:80)*1e-3
         % generate a random step 
         % std of the step distribution should be sqrt( 2Dt)
         steps = normrnd( 0, sqrt( 2*D*timeStep), [nFrames-1, 2]); % unit: um
-        locE = normrnd( 0, sqrt( 2*locError^2), [nFrames, 2]); % unit: um
+        locE = normrnd( 0, locError, [nFrames, 2]); % unit: um
         traj = ( [0 0; cumsum( steps)]+ locE)* 1e-6; % m
 
         % save track X & Y coordinates into tracksFinal structure

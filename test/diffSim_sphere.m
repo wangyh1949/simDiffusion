@@ -102,7 +102,7 @@ for i = 1: nTracks
         traj( j+1,:) = pos;
     end
     
-    locE = normrnd( 0, sqrt( 2*locError^2), [nFrames, 3]); % unit: um
+    locE = normrnd( 0, locError, [nFrames, 3]); % unit: um
     traj = traj + locE;
     
     % save track X & Y coordinates into tracksFinal structure

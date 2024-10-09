@@ -65,7 +65,7 @@ for i = 1: nTracks
         tTraj( :,k) = mean( reshape( traj(:,k), nAvg, []), 1);
     end
     
-%     locE = normrnd( 0, sqrt( 2*locError^2), [nFrames, 3]); % unit: um
+%     locE = normrnd( 0, locErr, [nFrames, 3]); % unit: um
 %     tTraj = tTraj + locE;
     
     % save track X & Y coordinates into tracksFinal structure

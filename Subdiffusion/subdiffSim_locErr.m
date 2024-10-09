@@ -1,7 +1,7 @@
 %{
 Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     Creation date: 9/24/2024
-    Last update date: 9/29/2024
+    Last update date: 10/9/2024
 
 Description: This code simulation the diffusion following fractional
 Brownian Motion (fBM), this allows subdiffusion simulation
@@ -23,7 +23,7 @@ strain = 'sim';
 
 % imaging parameters
 nTracks = 50000;
-nFrames = 200;      % frane number: 100 frames
+nFrames = 100;      % frane number: 100 frames
 frameT = 100e-3;    % frame interval: 100 ms
 dt = frameT;         % simulation time step: 10 ms
 
@@ -70,9 +70,10 @@ cList = repmat( colorList, [2, 1]);
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-linearFitFlag = 0; % 1: linear fit, 2: non-linear fit
+theoFlag = true; % flag for plotting the theoretical MSD
+linearFitFlag = false; % 1: linear fit, 0: non-linear fit
 
-locErrList = [ 0 20 30 40 ]* 1e-3;
+locErrList = [ 0 20 30 40]* 1e-3;
 % locErrList = 20e-3;
 
 fitResult = nan( length( locErrList), 2);
@@ -86,8 +87,8 @@ for c = 1: length( locErrList)
     for i = 1: nTracks
 
         traj = L* randn( nSteps, 3); % generate subdiffusive tracks
-        locE = sqrt( 2*locErr^2)* randn( nSteps, 3); % unit: um
-
+        locE = locErr* randn( nSteps, 3); % unit: um
+        
         trajLoc = traj + locE;
 
         % calculate EA-MSD
@@ -107,8 +108,14 @@ for c = 1: length( locErrList)
     % linear fit in log-log scale
     f = polyfit( log( time( fitR)), log( eaMSD( fitR)), 1);
     alphaFit = f(1);    DFit = exp( f(2))/ (2*dim);
+    
+    if logical( theoFlag)
+        % plot theoretical MSD
+        tFit = linspace( time(1), time( round( nFrames/4)), 1000);
+        MSDtheo = 2*dim* D* tFit.^ alpha + 2*dim* locErr^2;
+        plot( tFit, MSDtheo, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', sprintf( 'theory [%s]', note))
 
-    if logical( linearFitFlag)
+    elseif logical( linearFitFlag)
         % plot linear fit
         tFit = time( 1: round( end/6));  MSDFit =  2* dim* DFit* tFit.^ alphaFit;
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), ...

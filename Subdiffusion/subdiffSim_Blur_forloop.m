@@ -1,7 +1,7 @@
 %{
 Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     Creation date: 9/24/2024
-    Last update date: 
+    Last update date: 10/9/2024
 
 Description: This code simulation the diffusion following fractional
 Brownian Motion (fBM), this allows subdiffusion simulation
@@ -26,7 +26,7 @@ nTracks = 10000;
 nFrames = 100;      % frane number: 100 frames
 frameT = 100e-3;    % frame interval: 500 ms
 expT = 100e-3;      % exposure time: 100 ms
-dt = expT/ 5;       % simulation step time: 20 ms
+dt = expT/ 10;       % simulation step time: 20 ms
 
 % secondary parameters
 nInterval = frameT/ dt;         % number of simulation steps per frame
@@ -74,11 +74,10 @@ colorList = get( gca,'colororder');     colorList = repmat( colorList, [2, 1]);
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-linearFitFlag = 1; % 1: linear fit, 2: non-linear fit
+linearFitFlag = false; % 1: linear fit, 0: non-linear fit
 
-locErrList = [ 0 20 40 70 0]* 1e-3;
+locErrList = [ 0 20 40 50 0]* 1e-3;
 % locErrList = [ 30 40 50 60 70]* 1e-3;
-% nTracks = 50000;
 
 blurFlag = true( 1, length( locErrList));
 blurFlag( end) = false;
@@ -94,19 +93,19 @@ for c = 1: length( locErrList)
     for i = 1: nTracks
         
         traj = L* randn( nSteps, 3); % subdiffusive tracks
-        locE = sqrt( 2*locErr^2)* randn( nSteps, 3); % unit: um
-        
-        trajLoc = traj + locE;
-        
+                
         if logical( blurFlag( c))
             % motion blur: average position of every nAvg frames 
-            tmp = reshape( trajLoc', 3, nInterval, []); % divide by each frame
+            tmp = reshape( traj', 3, nInterval, []); % divide by each frame
             trajAvg = squeeze( mean( tmp( :, 1:nAvg, :), 2))'; % average over the exposure
         else
             trajAvg = traj( 1: nInterval: end, :);
         end
+
+        locE = locErr* randn( nFrames, 3); % unit: um
+        trajLoc = trajAvg + locE;
             
-        dr = trajAvg( 2:end, :) - trajAvg( 1, :);
+        dr = trajLoc( 2:end, :) - trajLoc( 1, :);
 
         MSD = sum( dr.^2, 2); % squared displacement (t-1 timelags)
         EnsMSD( i, :) = MSD; % store it in ensemble MSD matrix (fixed length) for EA-MSD plotting
@@ -136,18 +135,21 @@ for c = 1: length( locErrList)
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), ...
             'DisplayName', sprintf( '\\alpha=%.2f, D=%.1e [%s]', alphaFit, DFit, note))
     else
-        % non-linear fit using a comprehensive form: MSD = 6Dt^a + 6*locE^2 (problematic form for locE, overestimate)
-        fun = fittype( 'log( 6*a*(x)^b+6*c)');
+        % non-linear fit using a comprehensive form: MSD = 6Dt^a + 6*locE^2 - 12D*dt^a/(1+a)(2+a) 
+        fun = fittype( 'log( 6*a*(x)^b+c)');
         x0 = [ DFit, alphaFit, 0];
         xmin = [ 0, 0, -inf];
         xmax = [ inf, 2, inf];
         fitR2 = 1: 20;
 
         f = fit( time(fitR2)', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
-        DFit = f.a;  alphaFit = f.b;  locErrFit = sign( f.c)* sqrt( abs( f.c)); % unit: um
+        DFit = f.a;  alphaFit = f.b;  %locErrFit = sign( f.c)* sqrt( abs( f.c)); % unit: um
+
+        motionBlur = 4*dim* DFit* expT^alphaFit/ (( 1+alphaFit)* (2+alphaFit));
+        locErrFit = sqrt( ( f.c + motionBlur)/ (2*dim)); % unit: um
 
         tFit = linspace( time(1), time( round( nFrames/2)), 1000);
-        MSDFit = 2*dim*( DFit* tFit.^ alphaFit + f.c);
+        MSDFit = 2*dim*( DFit* tFit.^ alphaFit) + f.c;
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
             sprintf( '\\alpha=%.2f, D=%.1e, \\sigma=%.0fnm', alphaFit, DFit, locErrFit*1e3))
     end
