@@ -161,14 +161,13 @@ for c = 1: length( locErrList)
             'DisplayName', sprintf( '\\alpha=%.2f, D=%.1e [%s]', alphaFit, DFit, note))
     else
         % non-linear fit using a comprehensive form: MSD = 6Dt^a + 6*locE^2 - 12D*dt^a/(1+a)(2+a) 
-        % fun = fittype( 'log( 6*a*(x)^b+c)'); % fitting log(MSD) vs. t
-        fun = fittype( 'log( 6*a*exp(b*x)+c)'); % fitting log(MSD) vs. log(t)
+        fun = fittype( 'log( 6*a*(x)^b+c)');
         x0 = [ DFit, alphaFit, 0];
         xmin = [ 0, 0, -inf];
         xmax = [ inf, 2, inf];
         fitR2 = 1: 20;
 
-        f = fit( log(time(fitR2))', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
+        f = fit( time(fitR2)', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
         DFit = f.a;  alphaFit = f.b;  %locErrFit = sign( f.c)* sqrt( abs( f.c)); % unit: um
 
         motionBlur = 4*dim* DFit* expT^alphaFit/ (( 1+alphaFit)* (2+alphaFit));
