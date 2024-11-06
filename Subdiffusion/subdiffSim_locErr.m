@@ -70,7 +70,7 @@ cList = repmat( colorList, [2, 1]);
 fitR = 1: 3; % fitting region of MSD
 dim = 3; % dimension of the system
 
-theoFlag = true; % flag for plotting the theoretical MSD
+theoFlag = false; % flag for plotting the theoretical MSD
 linearFitFlag = false; % 1: linear fit, 0: non-linear fit
 
 locErrList = [ 0 20 30 40]* 1e-3;
@@ -122,13 +122,14 @@ for c = 1: length( locErrList)
             'DisplayName', sprintf( '\\alpha=%.2f, D=%.1e [%s]', alphaFit, DFit, note))
     else
         % non-linear fit using a comprehensive form: MSD = 6Dt^a + 6*locE^2 (problematic form for locE, overestimate)
-        fun = fittype( 'log( 6*a*(x)^b+6*c)');
+        % fun = fittype( 'log( 6*a*(x)^b+6*c)'); % fitting log(MSD) vs. t
+        fun = fittype( 'log( 6*a*exp(b*x)+6*c)'); % fitting log(MSD) vs. log(t)
         x0 = [ DFit, alphaFit, 0];
         xmin = [ 0, 0, 0];
         xmax = [ inf, 2, inf];
         fitR2 = 1: 20;
 
-        f = fit( time(fitR2)', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
+        f = fit( log( time(fitR2))', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
         DFit = f.a;  alphaFit = f.b;  locErrFit = sqrt( f.c); % unit: um
         
         tFit = linspace( time(1), time( round( nFrames/2)), 1000);    
