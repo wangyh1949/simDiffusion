@@ -18,7 +18,7 @@ fBM core: 10.1103/PhysRevE.110.014105 (Eq.1)
 
 clear, clc, close all
 
-simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
+% simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 strain = 'sim';
 
 % imaging parameters
@@ -86,8 +86,8 @@ for c = 1: length( locErrList)
     tStart = tic;
     for i = 1: nTracks
 
-        traj = L* randn( nSteps, 3); % generate subdiffusive tracks
-        locE = locErr* randn( nSteps, 3); % unit: um
+        traj = L* randn( nSteps, dim); % generate subdiffusive tracks
+        locE = locErr* randn( nSteps, dim); % unit: um
         
         trajLoc = traj + locE;
 
@@ -122,17 +122,17 @@ for c = 1: length( locErrList)
             'DisplayName', sprintf( '\\alpha=%.2f, D=%.1e [%s]', alphaFit, DFit, note))
     else
         % non-linear fit using a comprehensive form: MSD = 6Dt^a + 6*locE^2 (problematic form for locE, overestimate)
-        fun = fittype( 'log( 6*a*(x)^b+6*c)');
-        x0 = [ DFit, alphaFit, 0];
+        fun = fittype( 'log( 2*a*(x)^b+2*c)');
+        x0 = [ DFit*dim, alphaFit, 0];
         xmin = [ 0, 0, 0];
         xmax = [ inf, 2, inf];
         fitR2 = 1: 20;
 
         f = fit( time(fitR2)', log( eaMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
-        DFit = f.a;  alphaFit = f.b;  locErrFit = sqrt( f.c); % unit: um
+        DFit = f.a/ dim;  alphaFit = f.b;  locErrFit = sqrt( f.c/ dim); % unit: um
         
         tFit = linspace( time(1), time( round( nFrames/2)), 1000);    
-        MSDFit = 2*dim*( DFit* tFit.^ alphaFit + f.c);
+        MSDFit = 2*dim*( DFit* tFit.^ alphaFit + locErrFit^2);
         plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
             sprintf( '\\alpha=%.2f, D=%.1e, \\sigma=%.0f', alphaFit, DFit, locErrFit*1e3))
     end
@@ -149,7 +149,7 @@ xlabel( 'Time (s)', 'FontSize', 14)
 ylabel( 'EA-MSD (µm^2)', 'FontSize', 14)
 legend( 'Location', 'northwest', 'FontSize', 10)
 legend( 'Location', 'southeast', 'FontSize', 10)
-title( '3D Subdiffusion Simulation', 'FontSize', 13)
+title( sprintf( '%dD Subdiffusion Simulation', dim), 'FontSize', 13)
 subtitle( sprintf( 'Input: \\alpha=%g, D=%.0g, \\sigma varies', alpha, D), 'FontSize', 13)
 set( gca, 'Xscale', 'log', 'YScale', 'log')
 
