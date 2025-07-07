@@ -2,14 +2,15 @@
 -------------------------------------------------------------
 Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     creation date: 12/5/2023
-    last updated date: 4/15/2024
+    last updated date: 7/7/2025
 
-Description: this script 'diffSimCell' is adapted from 'diffSim3D'
-1) simulates the diffusion of a free particle in a confined cell shape in
-3D
+    ------- this script is adapted from diffSimCell.m -------
+
+Description: this script simulates the diffusion of a free particle in a
+confined cell shape in 3D with locError & motion blur
 
 ======Input=======
-nTracks, nFrames, D, dt, locError 
+nTracks, nFrames, frameT, dt, D, locErr
 
 ======Output=======
 tracksFinal stucture with fields: traj & MSD
@@ -23,38 +24,36 @@ MSD fitting parameter:
 
 clear, clc, close all
 
-colorList = get( gca,'colororder');     colorList = repmat( colorList, [2, 1]);
-
-simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
+% simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 strain = 'sim';
 
-
-% track parameters
-nTracks = 100; 
+% Tracking parameters
+nTracks = 1000; 
 nFrames = 100;
-frameT = 10e-3; % frame interval
-plotTrackFlag = 1;
+frameT = 10e-3; % frame interval, continuous exposure
+dt = 1e-3;     % 10 ms, unit: s (simulation time)
 
+if nTracks <= 100, plotTrackFlag = true; 
+else, plotTrackFlag = false; end
 
-% diffusion parameters
-D = 0.05; % um^2/s
-dt = 10e-3; % 10 ms, unit: s (simulation time)
-locError = 0e-2; % 40 nm, unit: um
+% Diffusion parameters
+D = 0.05;       % um^2/s
+locErr = 0e-3;  % 40 nm, unit: um
 
-
-nAvg = frameT/dt; % number of averaging frames (exposure)
+% Averaging parameters (motion blur)
+nAvg = frameT/ dt; % number of averaging frames (exposure)
 nSteps = nFrames* nAvg; % simulation steps
-maxTau = nFrames - 1;
 
 
-global r l
-% cellWid = 0.6;    cellLength = 2; % cell long axis: y & short axis: x-z
-cellWid = 1;    cellLength = 1; % cell long axis: y & short axis: x-z, unit: um
+% Cell geometry
+cellWid = 0.6;    cellLength = 2; % cell long axis: y & short axis: x-z, unit: um
+% cellWid = 1;    cellLength = 1;
 r = cellWid/2;    l = ( cellLength - cellWid)/ 2;
 
 fprintf( '~~~~ Simulation Starts ~~~~\n')
-fprintf( '   D = %.2f, dt = %d ms, step = %.2f um, locErr = %.2f um\n', D, dt*1e3, sqrt( 4*D*dt), locError)
+fprintf( '   D = %.2f, dt = %d ms, step = %.2f um, locErr = %.2f um\n', D, dt*1e3, sqrt( 4*D*dt), locErr)
 fprintf( '   nFrame = %d, total step = %.2f um\n', nFrames, sqrt( 4*D*dt*nFrames))
+fprintf( '   Average frames = %d, total simulation steps = %d\n', nAvg, nSteps)
 
 
 %% 1. generate randomly distributed origin points inside the cell
@@ -76,6 +75,7 @@ rng(0) % to make the result repeatable
     
 %% 2. Diffusion Simulation
 
+clearvars tracksFinal
 tracksFinal( nTracks, 1).traj = []; % create tf structure
 
 tic
@@ -84,39 +84,38 @@ for i = 1: nTracks
     pos = ori( i, :); % initial position, should be homogeneously generated in cell
     traj = nan( nSteps, 3);    traj( 1, :) = pos;
 
-    % generate random steps
-    % std of the step distribution should be sqrt( 2Dt)
-    jumps = normrnd( 0, sqrt( 2*D*dt), [nSteps-1, 3]); % unit: um
+    % generate random steps, std = sqrt(2Ddt)
+    % jumps = normrnd( 0, sqrt( 2*D*dt), [nSteps-1, 3]); % unit: um
+    jumps = sqrt( 2*D*dt)* randn( nSteps-1, 3); % unit: um
 
-    % each step, check whether it goes outside the cell
+    % after each step, check whether it goes outside the cell
     for j = 1: nSteps-1
-        pos = cellShape( pos + jumps(j, :)); % corrects pos
+        pos = cellShape( pos+ jumps(j, :), r, l); % corrects pos
         traj( j+1, :) = pos;
     end
     
     % time-averaging to get output traj by frame interval
-    tTraj = nan( nFrames, 3);
+    trajAvg = nan( nFrames, 3);
     for k = 1: 3
-        tTraj( :,k) = mean( reshape( traj(:,k), nAvg, []), 1);
+        trajAvg( :,k) = mean( reshape( traj(:,k), nAvg, []), 1);
     end
     
-%     locE = normrnd( 0, sqrt( 2*locError^2), [nFrames, 3]); % unit: um
-%     tTraj = tTraj + locE;
+    locE = locErr* randn( nFrames, 3); % unit: um
+    trajLoc = trajAvg + locE;
     
     % save track X & Y coordinates into tracksFinal structure
-    tracksFinal(i).traj = tTraj; % x & y coordiate, unit: um
+    tracksFinal(i).traj = trajLoc; % x & y coordiate, unit: um
 
-    if logical( plotTrackFlag) % plot tracks
-        plot3( tTraj(:,1), tTraj(:,2), tTraj(:,3), 'LineWidth', 1.5), hold on        
+    if plotTrackFlag % plot tracks
+        plot3( trajLoc(:,1), trajLoc(:,2), trajLoc(:,3), 'LineWidth', 1.5), hold on        
     end
         
     % ~~~~ Calculate Single Steps ~~~~
-    steps3D = sqrt( sum(( tTraj( 2:end, :)- tTraj( 1:end-1, :)).^2, 2)); % unit: um
-    steps = sqrt( sum(( tTraj( 2:end, 1:2)- tTraj( 1:end-1, 1:2)).^2, 2)); % unit: um
+    steps3D = sqrt( sum(( trajLoc( 2:end, :)- trajLoc( 1:end-1, :)).^2, 2)); % unit: um
+    steps = sqrt( sum(( trajLoc( 2:end, 1:2)- trajLoc( 1:end-1, 1:2)).^2, 2)); % unit: um
     
     tracksFinal(i).steps3D = steps3D'; % unit: um
     tracksFinal(i).steps = steps'; % unit: um
-    
 end
 
 fprintf( '\n~~~~~~  Simulation Done  ~~~~~~\n')
@@ -127,10 +126,10 @@ steps  = [ tracksFinal.steps]'; % unit: um
 steps3D = [ tracksFinal.steps3D]'; % unit: um
 
 
-%% Plot Setting
-if logical( plotTrackFlag)
+% Plot Setting
+if plotTrackFlag
     figure( gcf)
-    set( gcf, 'Position', [100, 400, 600, 400])
+    set( gcf, 'Position', [900, 450, 720, 400])
     set( gca, 'FontSize', 12)
     xlabel( 'X (\mum)', 'FontSize', 14)
     ylabel( 'Y (\mum)', 'FontSize', 14)
@@ -146,8 +145,6 @@ end
 
 % diffSimAnalysis
 
-% msd = EnsTAMSD(:,1); % MSD(1)
-
 % simJDPlot
 
 %     simName = sprintf( 'Sim %s_%d frames_D %.2f_LocE %d.mat', Date, nFrames, D, locError*1e3);
@@ -158,12 +155,11 @@ fprintf( '\n~~~~~~ !!!  All Complete  !!! ~~~~~~\n')
 
 
 
-%%
+%% Function
 
-function posCorr = cellShape( pos)
+function posCorr = cellShape( pos, r, l)
 % this function corrects position if it goes outside cell
 
-    global r l
     [ x, y, z] = deal( pos(1), pos(2), pos(3));
     
     inCyl = abs( y) < l & ( x^2 + z^2) < r^2; % in the cylinder region
