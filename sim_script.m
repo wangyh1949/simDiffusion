@@ -20,7 +20,7 @@ nFrames = 100;
 frameT = 20e-3; % frame interval
 % frameT = 100e-3; % frame interval
 expT = frameT;  % continuous exposure
-dt = expT/5;   % 10 ms, unit: s (simulation timestep)
+dt = expT/20;   % 10 ms, unit: s (simulation timestep)
 
 % Averaging parameters (motion blur)
 nInterval = frameT/dt;          % number of simulation steps per frame
@@ -39,7 +39,7 @@ locErr = 0e-2;  % 40 nm, unit: um
 % cellWid = 0.6;    cellLength = 2; % cell long axis: y & short axis: x-z
 cellWid = 1;    cellLength = 3; % cell long axis: y & short axis: x-z, unit: um
 
-fitFlag = 0; % 0: no fit, 1: linear fit, 2: non-linear fit
+fitFlag = 2; % 0: no fit, 1: linear fit, 2: non-linear fit
 
 
 %% Run Simulation & Plot MSD
@@ -52,8 +52,9 @@ Dlist = [ 0.001, 0.01, 0.1, 1];
 % Dlist = [ 0.0003, 0.001, 0.003, 0.01, 0.03];
 
 figure( 'Position', [1000 400 420 400])
-colorList = get( gca,'colororder');     colorList = repmat( colorList, [2, 1]);
+% colorList = get( gca,'colororder');     colorList = repmat( colorList, [2, 1]);
 
+colorList = flip( winter( length( Dlist)+1)); 
 
 tStart = tic;
 for c = 1: length( Dlist)
@@ -89,13 +90,13 @@ for c = 1: length( Dlist)
     
     if fitFlag == 0
         % plot EATA-MSD
-        scatter( time, eataMSD, 40, 'LineWidth', 2, 'MarkerEdgeColor', colorList( c,:),...
+        scatter( time, eataMSD, 30, 'LineWidth', 2, 'MarkerEdgeColor', colorList( c,:),...
             'MarkerEdgeAlpha', 0.5, 'DisplayName', sprintf( '%s', note)), hold on
         fitTxt = '';
     else
 
         % plot EATA-MSD
-        scatter( time, eataMSD, 40, 'LineWidth', 2, 'MarkerEdgeColor', colorList( c,:),...
+        scatter( time, eataMSD, 30, 'LineWidth', 2, 'MarkerEdgeColor', colorList( c,:),...
             'MarkerEdgeAlpha', 0.5, 'HandleVisibility','off'), hold on
     
         % linear fit in log-log scale 
@@ -115,15 +116,21 @@ for c = 1: length( Dlist)
             x0 = [ DFit, alphaFit, 0];
             xmin = [ 0, 0, -inf];
             xmax = [ inf, 2, inf];
+
+            % xmin = [ 0, 0, -1];   xmax = [ 10, 2, 1];
             fitR2 = 1: 20; fitTxt = '1:20 fit';
+            % fitR2 = 1: floor( nFrames/4); fitTxt = sprintf( '1:%d fit', max( fitR2));
     
             f = fit( time(fitR2)', log( eataMSD(fitR2))', fun, 'StartPoint', x0, 'Lower', xmin, 'Upper', xmax);
             DFit = f.a;  alphaFit = f.b;  %locErrFit = sign( f.c)* sqrt( abs( f.c)); % unit: um
     
             motionBlur = 4*dim* DFit* expT^alphaFit/ (( 1+alphaFit)* (2+alphaFit));
-            locErrFit = sqrt( ( f.c + motionBlur)/ (2*dim)); % unit: um
+            % locErrFit = sqrt( ( f.c + motionBlur)/ (2*dim)); % unit: um
+            loc2 = ( f.c + motionBlur)/ (2*dim);
+            locErrFit = sign( loc2)* sqrt( abs( loc2)); % unit: um
     
-            tFit = linspace( time(1), time( round( nFrames/2)), 1000);
+            % tFit = linspace( time(1), time( round( nFrames/2)), 1000);
+            tFit = linspace( time(1), time( fitR2( end)), 1000);
             MSDFit = 2*dim*( DFit* tFit.^ alphaFit) + f.c;
             plot( tFit, MSDFit, 'LineWidth', 2, 'color', colorList( c,:), 'DisplayName', ...
                 sprintf( '\\alpha=%.2f, D=%.1e, \\sigma=%.0fnm', alphaFit, DFit, locErrFit*1e3))
@@ -150,16 +157,18 @@ subtitle( sprintf( 'Input: \\sigma=%.0g, D varies  %s', locErr, fitTxt), 'FontSi
 set( gca, 'Xscale', 'log', 'YScale', 'log')
 
 simTxt = sprintf( '%d tracks\nframeT = %dms\nsim dt = %dms', nTracks, frameT*1e3, dt*1e3);
-txt = text( 0.55, 0.15, simTxt, 'FontSize', 13, 'Units', 'normalized');
-% legend( 'Location', 'southeast', 'FontSize', 10)
-% txt = text( 0.05, 0.85, simTxt, 'FontSize', 12, 'Units', 'normalized');
+% txt = text( 0.55, 0.15, simTxt, 'FontSize', 13, 'Units', 'normalized');
+legend( 'Location', 'southeast', 'FontSize', 10)
+txt = text( 0.05, 0.85, simTxt, 'FontSize', 12, 'Units', 'normalized');
 
 %%
 figure( gcf)
-ylim( [1e-5 10]), xlim( [1e-2 3])
+ylim( [1e-5 20]), xlim( [1e-2 3])
 % ylim( [1e-4 10]), xlim( [8e-2 100])
 % xlim( [0.05 20]), ylim( [1e-4, 20])
 % ylim( [1e-3 2]), xlim( [1 200])
+
+% ylim( [1e-5 200]), xlim( [1e-2 30]) % for 1000 frame, 20ms
 % xlim auto, ylim auto
 
 
