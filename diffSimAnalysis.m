@@ -18,11 +18,10 @@ MSD fitting parameter:
 
 tic
 
-
-
 %% MSD Analysis in 3D
 
 nTracks = length( tracksFinal);
+maxTau = nFrames - 1;
 
 % initialization of the quantities with the correct size
 EnsMSD3D = nan( nTracks, maxTau); 
@@ -136,7 +135,7 @@ eaMSD = mean( EnsMSD); % EA-MSD, unit: um^2
     time = (1: maxTau) * frameT;
     t = (1:20)* dt; MSDFit = p(1)*t + p(2);
 
-%     figure
+    figure
     
     scatter( time, eaMSD, 30, 'LineWidth', 2, 'MarkerEdgeAlpha', 0.5,... % 'MarkerEdgeColor', colorList(c,:),...
         'DisplayName', sprintf( 'EA-MSD, D=%.2f', D)), hold on

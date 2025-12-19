@@ -26,7 +26,7 @@ close all
 
 simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 
-list = dir( 'Sim*.mat');
+list = dir( 'Data\Sim*.mat');
 plotNum = getPlotNum( list); % find which files you want to plot 
 
 % colorList = get(gca,'colororder'); close % get the color code for plotting

@@ -14,12 +14,11 @@ timeStep = frameT; meanD = D; extraName = '';
 
 count = 1;
 
-colorList = get( gca,'colororder');
-
-
 
 %% histogram of displacement in 3D vs 2D
 figure
+colorList = get( gca,'colororder');
+
 h = histogram( steps3D, 40, 'Normalization', 'probability', ... % , 'BinWidth', 0.002, 
     'FaceAlpha', 0.7, 'EdgeColor', 'w', 'DisplayName', '3D'); hold on
 

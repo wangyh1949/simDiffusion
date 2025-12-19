@@ -38,15 +38,16 @@ v′=vcosθ+(r×v)sinθ+r(v*r)(1−cosθ)   where
 
 clear, clc, close all
 
-simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
+% simPath = 'C:\Users\yuhuanw2\Documents\MATLAB\simDiffusion\'; cd( simPath)
 strain = 'sim';
 
-plotTrackFlag = 0;
+plotTrackFlag = 1;
 
-nTracks = 1000;     nFrames = 30;   maxTau = nFrames - 1; % for TA-MSD
+nTracks = 100;     nFrames = 30;   maxTau = nFrames - 1; % for TA-MSD
 
 D = 0.1;    % um^2/s 
 dt = 1e-2;  % 10 ms, unit: s
+frameT = dt;
 
 locError = 0e-3; % 40 nm, unit: um
 

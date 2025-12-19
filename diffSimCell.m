@@ -19,7 +19,7 @@ tracksFinal stucture with fields: traj & MSD
 MSD fitting parameter: 
     diff, locErr, dalpha, alpha (unit adjusted for plotting)
 
-======Random Ffunction=======
+======Random Function=======
 rand: Uniformly distributed random numbers in (0,1)
 randn: Normally distributed random numbers: mean 0, variance 1
         f(x) = exp( -x^2/2)/ sqrt( 2*pi)
