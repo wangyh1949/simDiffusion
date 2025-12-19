@@ -3,15 +3,18 @@ Author: Yu-Huan Wang (Kim Lab at UIUC) - yuhuanw2@illinois.edu
     Creation date: 9/24/2024
     Last update date: 10/9/2024
 
-Description: This code simulation the diffusion following fractional
-Brownian Motion (fBM), this allows subdiffusion simulation
+Description: This code simulation the subdiffusion following fractional
+Brownian Motion (fBM)
 
 I added the effect of locErr & motion blur compared to subdiffSim.m
 
-Old: I used for loop to genearte tracks, instead of stroing in a structure
+this is the old version: I used for loop to generate tracks, instead of
+storing the tracks in a structure, see 'subdiffSim_Blur.m'
 
-There're two fitting methods to choose from: 1) linear fitting in log
-scale. 2) non-linear fitting in log scale
+There're two fitting methods to choose from: 
+    1) linear fitting in log scale
+    2) non-linear fitting in log scale
+
 fBM core: 10.1103/PhysRevE.110.014105 (Eq.1)
 ---------------------------------------------------------------------------
 %}
