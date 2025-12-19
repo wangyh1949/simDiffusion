@@ -26,8 +26,8 @@ strain = 'sim';
 % imaging parameters
 nTracks = 20000; 
 nFrames = 100;      % frane number: 100 frames
-frameT = 100e-3;    % frame interval: 500 ms
-expT = 100e-3;      % exposure time: 100 ms
+frameT = 100e-3;    % frame interval: 100 ms
+% expT = 100e-3;      % exposure time: 100 ms
 dt = 5e-3;         % simulation step time: 20 ms
 
 % secondary parameters
@@ -36,9 +36,9 @@ nSteps = nFrames* nInterval;    % simulation steps, simulation track length
 time = dt* nInterval*( 1:nFrames-1); % readout time points
 
 % diffusion parameters
-alpha = 0.4;        % subdiffusion exponent
-D = 0.005;          % um^2/s
-locErr = 0e-3;     % unit: um
+alpha = 0.4;    % subdiffusion exponent
+D = 0.005;      % um^2/s
+locErr = 0e-3;  % unit: um
 
 
 fprintf( '~~~~ Simulation Starts ~~~~\n')
@@ -90,8 +90,7 @@ dim = 3; % dimension of the system
 theoFlag = true; % flag for plotting the theoretical MSD
 linearFitFlag = false; % 1: linear fit, 0: non-linear fit
 
-expTList = [0 20 50 100]* 1e-3;      % exposure time: 100 ms
-% expTList = [100]* 1e-3;      % exposure time: 100 ms
+expTList = [0 20 50 100]* 1e-3; % exposure time: 100 ms
 
 avgFlag = true( 1, length( expTList));
 avgFlag( 1) = false;
